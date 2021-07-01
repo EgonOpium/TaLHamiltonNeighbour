@@ -4,7 +4,7 @@ from itertools import combinations
 from numpy import random
 import time
 
-N = 300
+N = 5
 p = 0.7
 
 
@@ -13,7 +13,7 @@ class Hamilton:
     hamiltonPath = []
 
     def __init__(self, graph):
-        self.graph = graph
+        self.G = graph
 
     def findPath(self, v, visited=None):
         if visited is None:
@@ -21,7 +21,8 @@ class Hamilton:
         if v in visited:
             return None
         visited.append(v)
-        neighbours = [n for n in G.neighbors(v)]
+
+        neighbours = [n for n in self.G.neighbors(v)]
         if not self.pathFound:
             if len(visited) == N:
                 for neighbour in neighbours:
@@ -40,44 +41,39 @@ class Hamilton:
         return None
 
 
+class Point:
+    def __init__(self, v):
+        self.V = v
+
+
 class NearestNeighbour:
     def __init__(self, graph):
         self.graph = graph
+        self.visited = []
+        self.weights = []
 
-    def findPath(self, graph):
-        visited = [0]
-        graph.edges(data=True)
-        edges = graph.edges()
-        weights = []
-        U = []
-        V = []
-        for x, y in edges:
-            U.append(x)
-            V.append(y)
-            weights.append(graph[x][y]['weight'])
-        path = [0]
-        print(f"Wagi: {weights}")
-        for element in range(N-1):
-            lowestWeiVal = 1000
-            lowestWeiInd = 1000
+    def findPath(self, start):
+        self.visited.append(start)
 
-            for weight in weights:
-                if (weight < lowestWeiVal) and (weights.index(weight) not in visited):
-                    lowestWeiVal = weight
-                    lowestWeiInd = weights.index(weight)
+        neighbours = [n for n in self.graph.neighbors(start)]
+        minD = 1000
+        n = None
+        for neighbour in neighbours:
+            if neighbour not in self.visited:
+                d = (wg.edges[start, neighbour].get("weight"))
+                if d < minD:
+                    minD = d
+                    n = neighbour
+        if n:
+            self.weights.append(minD)
+            self.findPath(n)
+        else:
 
-            if lowestWeiInd % 2 == 0:
-                visited.append(lowestWeiInd)
-                visited.append(lowestWeiInd+1)
-                number = lowestWeiInd / 2
-                path.append(int(number))
-            else:
-                visited.append(lowestWeiInd)
-                visited.append(lowestWeiInd - 1)
-                number = (lowestWeiInd-1)/2
-                path.append(int(number))
+            print(f"Znaleziona droga = {self.visited}")
+            print(f"Znalezione wagi = {self.weights}")
+            return self.visited
 
-        return path
+        return None
 
 
 class Graph:
@@ -98,19 +94,19 @@ class Graph:
     def createCustomGraph(self):
         g = nx.Graph()
         g.add_nodes_from([0, 1, 2, 3, 4])
-        g.add_edges_from([(0, 1), (0, 2), (0, 3), (1, 2), (1,4), (1,3), (2,4), (4,3)])
+        g.add_edges_from([(0, 1), (0, 2), (0, 3), (1, 2), (1, 4), (1, 3), (2, 4), (4, 3)])
         return g
 
     def createGraphWithWeights(self, n):
         g = nx.Graph()
+
         V = set([v for v in range(n)])
         E = set()
         g.add_nodes_from(V)
         for combination in combinations(V, 2):
-            g.add_edge(combination[0],combination[1], weight=random.randint(100))
+            g.add_edge(combination[0], combination[1], weight=random.randint(100))
 
         g.add_edges_from(E)
-
         return g
 
 
@@ -131,24 +127,23 @@ if __name__ == '__main__':
     else:
         print("Brak sciezki Hamiltona")
 
-
     pos = nx.spring_layout(G)
-    # nx.draw_networkx_edge_labels(G,pos,edge_labels=labels)
     print(f"--- Czas wykonania programu dla N = {N}, i p = {p}, jest równy: {(time.time() - start_time)} sekund ---")
     nx.draw_networkx(G)
     plt.title("Cykl Hamiltona")
     plt.show()
 
-
     # Graph 2
-    # wg = graph.createGraphWithWeights(N)
-    # nei = NearestNeighbour(wg)
-    # result2 = nei.findPath(wg)
-    # print(f"Odnaleziona droga: {result2}")
-    # pos = nx.spring_layout(wg)  # pos = nx.nx_agraph.graphviz_layout(G)
-    # nx.draw_networkx(wg, pos)
-    # labels = nx.get_edge_attributes(wg, 'weight')
-    # nx.draw_networkx_edge_labels(wg, pos, edge_labels=labels)
+    wg = graph.createGraphWithWeights(N)
 
-    # plt.title("Najbliższy sąsiad")
-    # plt.show()
+    print(f" Wszystkie punkty z wagami: {wg.edges(data='weight')}")
+
+    nei = NearestNeighbour(wg)
+    result2 = nei.findPath(0)
+    pos = nx.spring_layout(wg)
+    nx.draw_networkx(wg, pos)
+    labels = nx.get_edge_attributes(wg, 'weight')
+    nx.draw_networkx_edge_labels(wg, pos, edge_labels=labels)
+
+    plt.title("Najbliższy sąsiad")
+    plt.show()
